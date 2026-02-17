@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RSC Complete Calculator</title>
+    <style>
+        @font-face {
+            font-family: 'RSQuill';
+            src: url('../assets/RuneScape-Quill-8.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        :root {
+            --rsc-bg: #0e0f11;
+            --rsc-panel: #111318;
+            --rsc-border: #2a2e3a;
+            --rsc-text: #ffffff;
+            --rsc-gold: #e0e0e0;
+            --rsc-button: #161922;
+            --rsc-input: #1a1d24;
+            --fatigue-cyan: #00ffff;
+            --tab-active: #222735;
+        }
+
+        body {
+            background-color: var(--rsc-bg);
+            font-family: 'RSQuill', system-ui, sans-serif;
+            color: var(--rsc-text);
+            margin: 0;
+            padding: 20px;
+            user-select: none;
+        }
+
+        /* Custom scrollbar for results container */
+        .results-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .results-container::-webkit-scrollbar-track {
+            background: var(--rsc-input);
+            border-left: 1px solid var(--rsc-border);
+        }
+
+        .results-container::-webkit-scrollbar-thumb {
+            background: #4a4e5a;
+            border: 1px solid var(--rsc-border);
+        }
+
+        .results-container::-webkit-scrollbar-thumb:hover {
+            background: #5a5e6a;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            gap: 8px;
+        }
+
+        .skill-selector {
+            background: var(--rsc-panel);
+            border: 3px outset var(--rsc-border);
+            padding: 10px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .skill-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 4px;
+        }
+
+        .skill-btn {
+            background: var(--rsc-button);
+            border: 2px solid var(--rsc-border);
+            color: var(--rsc-text);
+            padding: 8px 2px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 14px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background-image: url('app/renderer/assets/button.jpg');
+            background-size: cover;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+
+        .skill-btn:hover {
+            border-color: #e0e0e0;
+            box-shadow: 0 0 8px rgba(224, 224, 224, 0.3);
+        }
+
+        .skill-btn:active, .skill-btn.active {
+            background-color: var(--tab-active);
+            background-blend-mode: overlay;
+            border-color: #bfbfbf;
+        }
+
+        .main-panel {
+            background: var(--rsc-panel);
+            border: 3px outset var(--rsc-border);
+            padding: 20px;
+            min-height: 500px;
+            min-width: 0;
+            overflow-x: auto;
+        }
+
+        h1 {
+            color: var(--rsc-gold);
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            margin-top: 0;
+            text-align: center;
+            border-bottom: 1px solid var(--rsc-border);
+            font-size: 26px;
+            margin-bottom: 15px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border: 1px solid var(--rsc-border);
+            display: flex;
+            justify-content: space-around;
+        }
+
+        label {
+            display: block;
+            color: var(--rsc-text);
+            margin-bottom: 5px;
+            font-size: 15px;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+
+        input[type="number"] {
+            background: var(--rsc-input);
+            border: 1px solid var(--rsc-border);
+            color: #0f0;
+            padding: 5px;
+            width: 80px;
+            font-family: inherit;
+            font-size: 18px;
+            -moz-appearance: textfield;
+        }
+
+        /* Remove arrows from number inputs */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .filter-bar {
+            margin-bottom: 10px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            background: var(--rsc-button);
+            border: 1px solid var(--rsc-border);
+            color: var(--rsc-text);
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+        
+        .filter-btn:hover { 
+            border-color: #e0e0e0;
+            box-shadow: 0 0 8px rgba(224, 224, 224, 0.3);
+        }
+        .filter-btn.active { 
+            background: var(--tab-active);
+            color: var(--rsc-gold);
+            border-color: var(--rsc-gold);
+        }
+
+        .stats-box {
+            background: #000;
+            padding: 10px;
+            border: 2px solid var(--rsc-border);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-label { 
+            color: #aaa;
+            font-size: 13px;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+        .stat-value { 
+            color: var(--rsc-gold);
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+        }
+
+        .results-container {
+            max-height: 550px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            border: 1px solid var(--rsc-border);
+        }
+
+        .results-table {
+            width: calc(100% - 8px);
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--rsc-input);
+            table-layout: fixed;
+        }
+
+        .results-table th {
+            background: var(--rsc-button);
+            color: var(--rsc-gold);
+            padding: 6px;
+            border: 1px solid var(--rsc-border);
+            text-align: left;
+            position: sticky;
+            top: 0;
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+            white-space: nowrap;
+        }
+
+        .results-table th:nth-child(1) { width: 35%; }
+        .results-table th:nth-child(2) { width: 8%; }
+        .results-table th:nth-child(3) { width: 10%; }
+        .results-table th:nth-child(4) { width: 14%; }
+        .results-table th:nth-child(5) { width: 18%; }
+
+        .results-table td {
+            padding: 4px 6px;
+            border: 1px solid var(--rsc-border);
+            color: #ccc;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .results-table td:first-child {
+            white-space: nowrap;
+        }
+
+        .fatigue-val { color: var(--fatigue-cyan); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="skill-selector">
+        <div class="skill-grid" id="skillGrid"></div>
+    </div>
+
+    <div class="main-panel">
+        <h1 id="skillTitle">Select a Skill</h1>
+        
+        <div id="calcInterface" style="display:none; position: relative;">
+            <div class="input-group">
+                <div>
+                    <label>Level</label>
+                    <input type="number" id="currentLevel" value="1" min="1" max="99" oninput="updateFromLevel()">
+                </div>
+                <div>
+                    <label>Current XP</label>
+                    <input type="number" id="currentXP" value="0" oninput="updateFromXP()">
+                </div>
+                <div>
+                    <label>Target Level</label>
+                    <input type="number" id="targetLevel" value="99" min="1" max="99" oninput="calculate()">
+                </div>
+            </div>
+
+            <div class="stats-box">
+                <div class="stat-item">
+                    <div class="stat-label">XP NEEDED</div>
+                    <div class="stat-value" id="xpNeeded">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">TOTAL FATIGUE</div>
+                    <div class="stat-value" style="color:var(--fatigue-cyan)" id="totalFatigueDisp">0%</div>
+                </div>
+            </div>
+
+            <div id="filterBar" class="filter-bar"></div>
+
+            <div class="results-container">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Lvl</th>
+                            <th>XP</th>
+                            <th>Fatigue %</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody id="methodsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const xpTable = [];
+    let acc = 0;
+    for (let l = 1; l <= 99; l++) {
+        xpTable[l] = Math.floor(acc / 4);
+        acc += Math.floor(l + 300 * Math.pow(2, l / 7));
+    }
+
+    // REMOVED COMBAT SKILLS: Attack, Defense, Strength, Hits, Ranging, Magic
+    const skills = [
+        "Prayer", "Cooking", "Woodcutting", "Fletching", "Fishing", 
+        "Firemaking", "Crafting", "Smithing", "Mining", "Herblaw", 
+        "Agility", "Thieving"
+    ];
+
+    const methods = {
+        "Woodcutting": [
+            { name: "Logs", lvl: 1, xp: 25, fat: 0.533 },
+            { name: "Oak logs", lvl: 15, xp: 37.5, fat: 0.8 },
+            { name: "Willow logs", lvl: 30, xp: 62.5, fat: 1.333 },
+            { name: "Maple logs", lvl: 45, xp: 100, fat: 2.133 },
+            { name: "Yew logs", lvl: 60, xp: 175, fat: 3.733 },
+            { name: "Magic logs", lvl: 75, xp: 250, fat: 5.333 }
+        ],
+        "Prayer": [
+            { name: "Bones", lvl: 1, xp: 3.75, fat: 0.080 },
+            { name: "Bat bones", lvl: 1, xp: 4.5, fat: 0.096 },
+            { name: "Big bones", lvl: 1, xp: 12.5, fat: 0.266 },
+            { name: "Dragon bones", lvl: 1, xp: 60, fat: 1.280 }
+        ],
+        "Herblaw": [
+            { name: "Guam leaf", lvl: 3, xp: 2.5, fat: 0.0533, filter: "Herbs" },
+            { name: "Marrentill", lvl: 5, xp: 3.75, fat: 0.0800, filter: "Herbs" },
+            { name: "Tarromin", lvl: 11, xp: 5.0, fat: 0.1067, filter: "Herbs" },
+            { name: "Harralander", lvl: 20, xp: 6.25, fat: 0.1333, filter: "Herbs" },
+            { name: "Ranarr Weed", lvl: 25, xp: 7.50, fat: 0.1600, filter: "Herbs" },
+            { name: "Irit Leaf", lvl: 40, xp: 8.75, fat: 0.1867, filter: "Herbs" },
+            { name: "Avantoe", lvl: 48, xp: 10.00, fat: 0.2133, filter: "Herbs" },
+            { name: "Kwuarm", lvl: 54, xp: 11.25, fat: 0.2400, filter: "Herbs" },
+            { name: "Cadantine", lvl: 65, xp: 12.50, fat: 0.2667, filter: "Herbs" },
+            { name: "Dwarf Weed", lvl: 70, xp: 13.75, fat: 0.2933, filter: "Herbs" },
+            { name: "Torstol", lvl: 75, xp: 15.00, fat: 0.3200, filter: "Herbs" },
+            { name: "Attack Potion", lvl: 3, xp: 25, fat: 0.533, filter: "Potions" },
+            { name: "Cure poison Potion", lvl: 5, xp: 37.5, fat: 0.800, filter: "Potions" },
+            { name: "Explosive compound", lvl: 10, xp: 18.75, fat: 0.400, filter: "Potions" },
+            { name: "Strength Potion", lvl: 12, xp: 50, fat: 1.067, filter: "Potions" },
+            { name: "Ogre potion", lvl: 14, xp: 50, fat: 1.067, filter: "Potions" },
+            { name: "Stat restoration Potion", lvl: 22, xp: 62.5, fat: 1.333, filter: "Potions" },
+            { name: "Blamish oil", lvl: 25, xp: 80, fat: 1.707, filter: "Potions" },
+            { name: "Defense Potion", lvl: 30, xp: 75, fat: 1.600, filter: "Potions" },
+            { name: "Restore prayer Potion", lvl: 38, xp: 87.5, fat: 1.867, filter: "Potions" },
+            { name: "Super attack Potion", lvl: 45, xp: 100, fat: 2.133, filter: "Potions" },
+            { name: "Poison antidote", lvl: 48, xp: 106.25, fat: 2.267, filter: "Potions" },
+            { name: "Fishing Potion", lvl: 50, xp: 112.5, fat: 2.400, filter: "Potions" },
+            { name: "Super strength Potion", lvl: 55, xp: 125, fat: 2.667, filter: "Potions" },
+            { name: "Weapon poison", lvl: 60, xp: 137.5, fat: 2.933, filter: "Potions" },
+            { name: "Super defense Potion", lvl: 66, xp: 150, fat: 3.200, filter: "Potions" },
+            { name: "Ranging Potion", lvl: 72, xp: 162.5, fat: 3.467, filter: "Potions" },
+            { name: "Potion of Zamorak", lvl: 78, xp: 175, fat: 3.733, filter: "Potions" }
+        ],
+        "Thieving": [
+            { name: "Man", lvl: 1, xp: 8, fat: 0.16, filter: "NPCs" },
+            { name: "Farmer", lvl: 10, xp: 14.5, fat: 0.3, filter: "NPCs" },
+            { name: "Warrior", lvl: 25, xp: 26, fat: 0.5, filter: "NPCs" },
+            { name: "Rogue", lvl: 32, xp: 35.5, fat: 0.7, filter: "NPCs" },
+            { name: "Guard", lvl: 40, xp: 46.5, fat: 1.0, filter: "NPCs" },
+            { name: "Knight", lvl: 55, xp: 84.5, fat: 1.5, filter: "NPCs" },
+            { name: "Paladin", lvl: 70, xp: 152, fat: 2.5, filter: "NPCs" },
+            { name: "Hero", lvl: 80, xp: 274, fat: 3.5, filter: "NPCs" },
+            { name: "Tea stall", lvl: 5, xp: 16, fat: 0.3, filter: "Stalls" },
+            { name: "Bakers Stall", lvl: 5, xp: 16, fat: 0.3, filter: "Stalls" },
+            { name: "Rock Cake counter", lvl: 15, xp: 16, fat: 0.3, filter: "Stalls" },
+            { name: "Silk Stall", lvl: 20, xp: 24, fat: 0.5, filter: "Stalls" },
+            { name: "Fur Stall", lvl: 35, xp: 36, fat: 0.7, filter: "Stalls" },
+            { name: "Silver stall", lvl: 50, xp: 54, fat: 1.1, filter: "Stalls" },
+            { name: "Spice stall", lvl: 65, xp: 81, fat: 1.6, filter: "Stalls" },
+            { name: "Gem stall", lvl: 75, xp: 160, fat: 3.2, filter: "Stalls" },
+            { name: "10 Coin Chest", lvl: 7, xp: 3.75, fat: 0.1, filter: "Chests" },
+            { name: "Nature-rune Chest", lvl: 28, xp: 25, fat: 0.6, filter: "Chests" },
+            { name: "50 Coin Chest", lvl: 43, xp: 125, fat: 2.5, filter: "Chests" },
+            { name: "Hemenster Chest", lvl: 47, xp: 150, fat: 3.0, filter: "Chests" },
+            { name: "Blood-rune Chest", lvl: 59, xp: 250, fat: 5.0, filter: "Chests" },
+            { name: "Paladin Chest", lvl: 72, xp: 500, fat: 10.0, filter: "Chests" }
+        ],
+        "Agility": [
+            { name: "Gnome Stronghold Course", lvl: 1, xp: 90, fat: 1.5 },
+            { name: "Barbarian Outpost Course", lvl: 35, xp: 150, fat: 3.0 },
+            { name: "Wilderness Agility Course", lvl: 52, xp: 472.5, fat: 5.0 }
+        ],
+        "Mining": [
+            { name: "Strange rocks", lvl: 1, xp: 0, fat: 0 },
+            { name: "Clay rock", lvl: 1, xp: 5, fat: 0.1066 },
+            { name: "Copper rock", lvl: 1, xp: 17.5, fat: 0.3733 },
+            { name: "Tin rock", lvl: 1, xp: 17.5, fat: 0.3733 },
+            { name: "Blurite rock", lvl: 10, xp: 17.5, fat: 0.3733 },
+            { name: "Iron rock", lvl: 15, xp: 35, fat: 0.7466 },
+            { name: "Silver rock", lvl: 20, xp: 40, fat: 0.8533 },
+            { name: "Coal rock", lvl: 30, xp: 50, fat: 1.0667 },
+            { name: "Gold rock", lvl: 40, xp: 65, fat: 1.3866 },
+            { name: "Gem rock", lvl: 40, xp: 50, fat: 1.0667 },
+            { name: "Mithril rock", lvl: 55, xp: 80, fat: 1.7066 },
+            { name: "Adamantite rock", lvl: 70, xp: 95, fat: 2.0266 },
+            { name: "Runite rock", lvl: 85, xp: 125, fat: 2.6667 }
+        ],
+        "Fishing": [
+            { name: "Shrimp", lvl: 1, xp: 10, fat: 0.2133 },
+            { name: "Sardine", lvl: 5, xp: 20, fat: 0.4266 },
+            { name: "Herring", lvl: 10, xp: 30, fat: 0.64 },
+            { name: "Giant Carp", lvl: 10, xp: 0, fat: 0 },
+            { name: "Anchovies", lvl: 15, xp: 40, fat: 0.8533 },
+            { name: "Mackerel", lvl: 16, xp: 20, fat: 0.4266 },
+            { name: "Trout", lvl: 20, xp: 50, fat: 1.0667 },
+            { name: "Cod", lvl: 23, xp: 45, fat: 0.96 },
+            { name: "Pike", lvl: 25, xp: 60, fat: 1.28 },
+            { name: "Salmon", lvl: 30, xp: 70, fat: 1.4933 },
+            { name: "Tuna", lvl: 35, xp: 80, fat: 1.7066 },
+            { name: "Lobster", lvl: 40, xp: 90, fat: 1.92 },
+            { name: "Bass", lvl: 46, xp: 100, fat: 2.133 },
+            { name: "Swordfish", lvl: 50, xp: 100, fat: 2.133 },
+            { name: "Lava eel", lvl: 53, xp: 90, fat: 1.92 },
+            { name: "Shark", lvl: 76, xp: 110, fat: 2.3466 },
+            { name: "Sea turtle", lvl: 79, xp: 95, fat: 2.0266 },
+            { name: "Manta ray", lvl: 81, xp: 115, fat: 2.4533 }
+        ],
+        "Fletching": [
+            { name: "Arrow Shafts", lvl: 1, xp: 5, fat: 0.1066, filter: "Misc" },
+            { name: "Shortbow", lvl: 5, xp: 5, fat: 0.1066, filter: "Bows" },
+            { name: "Longbow", lvl: 10, xp: 10, fat: 0.2133, filter: "Bows" },
+            { name: "Oak Shortbow", lvl: 20, xp: 16.5, fat: 0.352, filter: "Bows" },
+            { name: "Oak Longbow", lvl: 25, xp: 25, fat: 0.5333, filter: "Bows" },
+            { name: "Willow Shortbow", lvl: 35, xp: 33.25, fat: 0.7093, filter: "Bows" },
+            { name: "Willow Longbow", lvl: 40, xp: 41.5, fat: 0.8853, filter: "Bows" },
+            { name: "Maple Shortbow", lvl: 50, xp: 50, fat: 1.0667, filter: "Bows" },
+            { name: "Maple Longbow", lvl: 55, xp: 58.25, fat: 1.2426, filter: "Bows" },
+            { name: "Yew Shortbow", lvl: 65, xp: 66.5, fat: 1.4186, filter: "Bows" },
+            { name: "Yew Longbow", lvl: 70, xp: 75, fat: 1.6, filter: "Bows" },
+            { name: "Magic Shortbow", lvl: 80, xp: 83.25, fat: 1.776, filter: "Bows" },
+            { name: "Magic Longbow", lvl: 85, xp: 91.5, fat: 1.952, filter: "Bows" },
+            { name: "Bronze Arrows (10)", lvl: 1, xp: 12.5, fat: 0.2667, filter: "Arrows" },
+            { name: "Iron Arrows (10)", lvl: 15, xp: 25, fat: 0.5333, filter: "Arrows" },
+            { name: "Steel Arrows (10)", lvl: 30, xp: 50, fat: 1.0667, filter: "Arrows" },
+            { name: "Mithril Arrows (10)", lvl: 45, xp: 75, fat: 1.6, filter: "Arrows" },
+            { name: "Adamantite Arrows (10)", lvl: 60, xp: 100, fat: 2.1333, filter: "Arrows" },
+            { name: "Rune Arrows (10)", lvl: 75, xp: 125, fat: 2.6667, filter: "Arrows" },
+            { name: "Bronze Throwing Dart (12)", lvl: 10, xp: 12, fat: 0.24, filter: "Darts" },
+            { name: "Iron Throwing Dart (12)", lvl: 22, xp: 12, fat: 0.24, filter: "Darts" },
+            { name: "Steel Throwing Dart (12)", lvl: 37, xp: 12, fat: 0.24, filter: "Darts" },
+            { name: "Mithril Throwing Dart (12)", lvl: 52, xp: 12, fat: 0.24, filter: "Darts" },
+            { name: "Adamantite Throwing Dart (12)", lvl: 67, xp: 12, fat: 0.24, filter: "Darts" },
+            { name: "Rune Throwing Dart (12)", lvl: 82, xp: 12, fat: 0.24, filter: "Darts" }
+        ],
+        "Cooking": [
+            { name: "Shrimp", lvl: 1, xp: 30, fat: 0.5 },
+            { name: "Anchovies", lvl: 1, xp: 30, fat: 0.5 },
+            { name: "Sardine", lvl: 1, xp: 40, fat: 0.6 },
+            { name: "Herring", lvl: 5, xp: 50, fat: 0.8 },
+            { name: "Giant Carp", lvl: 10, xp: 60, fat: 1.0 },
+            { name: "Mackerel", lvl: 10, xp: 60, fat: 1.0 },
+            { name: "Trout", lvl: 15, xp: 70, fat: 1.0 },
+            { name: "Cod", lvl: 18, xp: 75, fat: 1.2 },
+            { name: "Pike", lvl: 20, xp: 80, fat: 1.3 },
+            { name: "Salmon", lvl: 25, xp: 90, fat: 1.5 },
+            { name: "Tuna", lvl: 30, xp: 100, fat: 1.7 },
+            { name: "Lobster", lvl: 40, xp: 120, fat: 2.0 },
+            { name: "Bass", lvl: 43, xp: 130, fat: 2.2 },
+            { name: "Swordfish", lvl: 45, xp: 140, fat: 2.4 },
+            { name: "Lava eel", lvl: 53, xp: 140, fat: 2.4 },
+            { name: "Shark", lvl: 80, xp: 210, fat: 3.5 },
+            { name: "Sea turtle", lvl: 82, xp: 211.5, fat: 3.5 },
+            { name: "Manta ray", lvl: 91, xp: 216, fat: 3.6 }
+        ],
+        "Smithing": [
+            { name: "Bronze Bar", lvl: 1, xp: 6.25, fat: 0.133, filter: "Bars" },
+            { name: "Iron Bar", lvl: 15, xp: 12.5, fat: 0.267, filter: "Bars" },
+            { name: "Silver Bar", lvl: 20, xp: 13.75, fat: 0.293, filter: "Bars" },
+            { name: "Steel Bar", lvl: 30, xp: 17.5, fat: 0.373, filter: "Bars" },
+            { name: "Gold Bar", lvl: 40, xp: 22.5, fat: 0.480, filter: "Bars" },
+            { name: "Mithril Bar", lvl: 50, xp: 30, fat: 0.640, filter: "Bars" },
+            { name: "Adamantite Bar", lvl: 70, xp: 37.5, fat: 0.800, filter: "Bars" },
+            { name: "Runite Bar", lvl: 85, xp: 50, fat: 1.066, filter: "Bars" },
+            { name: "Bronze Dagger", lvl: 1, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Axe", lvl: 1, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Mace", lvl: 2, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Med Helmet", lvl: 3, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Short Sword", lvl: 4, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Dart tips x7", lvl: 4, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Arrow heads x10", lvl: 5, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Scimitar (2)", lvl: 5, xp: 25, fat: 0.534, filter: "Bronze" },
+            { name: "Bronze Long Sword (2)", lvl: 6, xp: 25, fat: 0.534, filter: "Bronze" },
+            { name: "Bronze Large Helmet (2)", lvl: 7, xp: 25, fat: 0.534, filter: "Bronze" },
+            { name: "Bronze Throwing knives x2", lvl: 7, xp: 12.5, fat: 0.267, filter: "Bronze" },
+            { name: "Bronze Square Shield (2)", lvl: 8, xp: 25, fat: 0.534, filter: "Bronze" },
+            { name: "Bronze Battle Axe (3)", lvl: 10, xp: 37.5, fat: 0.801, filter: "Bronze" },
+            { name: "Bronze Chain mail body (3)", lvl: 11, xp: 37.5, fat: 0.801, filter: "Bronze" },
+            { name: "Bronze Kite Shield (3)", lvl: 12, xp: 37.5, fat: 0.801, filter: "Bronze" },
+            { name: "Bronze 2-handed Sword (3)", lvl: 14, xp: 37.5, fat: 0.801, filter: "Bronze" },
+            { name: "Bronze Plated Skirt (3)", lvl: 16, xp: 37.5, fat: 0.801, filter: "Bronze" },
+            { name: "Bronze Plate Mail Legs (3)", lvl: 16, xp: 37.5, fat: 0.801, filter: "Bronze" },
+            { name: "Bronze Plate Mail Body (5)", lvl: 18, xp: 62.5, fat: 1.335, filter: "Bronze" },
+            { name: "Iron Dagger", lvl: 15, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Axe", lvl: 16, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Mace", lvl: 17, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Med Helmet", lvl: 18, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Short Sword", lvl: 19, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Dart tips x7", lvl: 19, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Arrow heads x10", lvl: 20, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Scimitar (2)", lvl: 20, xp: 50, fat: 1.066, filter: "Iron" },
+            { name: "Iron Long Sword (2)", lvl: 21, xp: 50, fat: 1.066, filter: "Iron" },
+            { name: "Iron Large Helmet (2)", lvl: 22, xp: 50, fat: 1.066, filter: "Iron" },
+            { name: "Iron Throwing knives x2", lvl: 22, xp: 25, fat: 0.533, filter: "Iron" },
+            { name: "Iron Square Shield (2)", lvl: 23, xp: 50, fat: 1.066, filter: "Iron" },
+            { name: "Iron Battle Axe (3)", lvl: 25, xp: 75, fat: 1.599, filter: "Iron" },
+            { name: "Iron Chain mail body (3)", lvl: 26, xp: 75, fat: 1.599, filter: "Iron" },
+            { name: "Iron Kite Shield (3)", lvl: 27, xp: 75, fat: 1.599, filter: "Iron" },
+            { name: "Iron 2-handed Sword (3)", lvl: 29, xp: 75, fat: 1.599, filter: "Iron" },
+            { name: "Iron Plated Skirt (3)", lvl: 31, xp: 75, fat: 1.599, filter: "Iron" },
+            { name: "Iron Plate Mail Legs (3)", lvl: 31, xp: 75, fat: 1.599, filter: "Iron" },
+            { name: "Iron Plate Mail Body (5)", lvl: 33, xp: 125, fat: 2.665, filter: "Iron" },
+            { name: "Steel Dagger", lvl: 30, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Multi cannon ball x1", lvl: 30, xp: 25, fat: 0.8, filter: "Steel" },
+            { name: "Steel Axe", lvl: 31, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Mace", lvl: 32, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Med Helmet", lvl: 33, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Short Sword", lvl: 34, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Nails x2", lvl: 34, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Dart tips x7", lvl: 34, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Arrow heads x10", lvl: 35, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Scimitar (2)", lvl: 35, xp: 75, fat: 1.6, filter: "Steel" },
+            { name: "Steel Long Sword (2)", lvl: 36, xp: 75, fat: 1.6, filter: "Steel" },
+            { name: "Steel Large Helmet (2)", lvl: 37, xp: 75, fat: 1.6, filter: "Steel" },
+            { name: "Steel Throwing knives x2", lvl: 37, xp: 37.5, fat: 0.8, filter: "Steel" },
+            { name: "Steel Square Shield (2)", lvl: 38, xp: 75, fat: 1.6, filter: "Steel" },
+            { name: "Steel Battle Axe (3)", lvl: 40, xp: 112.5, fat: 2.4, filter: "Steel" },
+            { name: "Steel Chain mail body (3)", lvl: 41, xp: 112.5, fat: 2.4, filter: "Steel" },
+            { name: "Steel Kite Shield (3)", lvl: 42, xp: 112.5, fat: 2.4, filter: "Steel" },
+            { name: "Steel 2-handed Sword (3)", lvl: 44, xp: 112.5, fat: 2.4, filter: "Steel" },
+            { name: "Steel Plated Skirt (3)", lvl: 46, xp: 112.5, fat: 2.4, filter: "Steel" },
+            { name: "Steel Plate Mail Legs (3)", lvl: 46, xp: 112.5, fat: 2.4, filter: "Steel" },
+            { name: "Steel Plate Mail Body (5)", lvl: 48, xp: 187.5, fat: 4.0, filter: "Steel" },
+            { name: "Mithril Dagger", lvl: 50, xp: 50, fat: 1.066, filter: "Mithril" },
+            { name: "Mithril Axe", lvl: 51, xp: 50, fat: 1.066, filter: "Mithril" },
+            { name: "Mithril Scimitar (2)", lvl: 55, xp: 100, fat: 2.132, filter: "Mithril" },
+            { name: "Mithril Plate Mail Body (5)", lvl: 68, xp: 250, fat: 5.33, filter: "Mithril" },
+            { name: "Adamantite Dagger", lvl: 70, xp: 62.5, fat: 1.333, filter: "Adamant" },
+            { name: "Adamantite Axe", lvl: 71, xp: 62.5, fat: 1.333, filter: "Adamant" },
+            { name: "Adamantite Scimitar (2)", lvl: 75, xp: 125, fat: 2.666, filter: "Adamant" },
+            { name: "Adamantite Plate Mail Body (5)", lvl: 88, xp: 312.5, fat: 6.665, filter: "Adamant" },
+            { name: "Rune Dagger", lvl: 85, xp: 75, fat: 1.6, filter: "Rune" },
+            { name: "Rune Axe", lvl: 86, xp: 75, fat: 1.6, filter: "Rune" },
+            { name: "Rune Scimitar (2)", lvl: 90, xp: 150, fat: 3.2, filter: "Rune" },
+            { name: "Rune 2-handed Sword (3)", lvl: 99, xp: 225, fat: 4.8, filter: "Rune" },
+            { name: "Rune Plate Mail Body (5)", lvl: 99, xp: 375, fat: 8.0, filter: "Rune" },
+            { name: "Dragon Square Shield", lvl: 60, xp: 75, fat: 1.5, filter: "Special" }
+        ],
+        "Crafting": [
+            { name: "Leather Gloves", lvl: 1, xp: 13.75, fat: 0.5, filter: "Leather" },
+            { name: "Leather Boots", lvl: 7, xp: 16.25, fat: 0.6, filter: "Leather" },
+            { name: "Leather Armour", lvl: 14, xp: 25, fat: 0.9, filter: "Leather" },
+            { name: "Pot", lvl: 1, xp: 6.25, fat: 0.2, filter: "Pottery" },
+            { name: "Pie dish", lvl: 4, xp: 15, fat: 0.4, filter: "Pottery" },
+            { name: "Bowl", lvl: 7, xp: 10, fat: 0.3, filter: "Pottery" },
+            { name: "Sapphire", lvl: 20, xp: 50, fat: 1.0, filter: "Gems" },
+            { name: "Emerald", lvl: 27, xp: 67.5, fat: 1.3, filter: "Gems" },
+            { name: "Ruby", lvl: 34, xp: 85, fat: 1.7, filter: "Gems" },
+            { name: "Diamond", lvl: 43, xp: 107.5, fat: 2.1, filter: "Gems" },
+            { name: "Dragonstone", lvl: 55, xp: 137.5, fat: 2.7, filter: "Gems" },
+            { name: "Opal", lvl: 10, xp: 15, fat: 0.4, filter: "Gems" },
+            { name: "Jade", lvl: 13, xp: 20, fat: 0.5, filter: "Gems" },
+            { name: "Red topaz", lvl: 16, xp: 25, fat: 0.6, filter: "Gems" },
+            { name: "Holy symbol", lvl: 16, xp: 50, fat: 1.2, filter: "Jewelry" },
+            { name: "Unholy symbol", lvl: 16, xp: 50, fat: 1.2, filter: "Jewelry" },
+            { name: "Gold ring", lvl: 5, xp: 15, fat: 0.5, filter: "Jewelry" },
+            { name: "Gold necklace", lvl: 6, xp: 20, fat: 0.6, filter: "Jewelry" },
+            { name: "Gold amulet", lvl: 8, xp: 30, fat: 0.8, filter: "Jewelry" },
+            { name: "Sapphire ring", lvl: 8, xp: 40, fat: 0.9, filter: "Jewelry" },
+            { name: "Sapphire necklace", lvl: 10, xp: 55, fat: 1.2, filter: "Jewelry" },
+            { name: "Sapphire amulet", lvl: 13, xp: 65, fat: 1.4, filter: "Jewelry" },
+            { name: "Emerald ring", lvl: 18, xp: 55, fat: 1.2, filter: "Jewelry" },
+            { name: "Emerald necklace", lvl: 24, xp: 60, fat: 1.3, filter: "Jewelry" },
+            { name: "Emerald amulet", lvl: 30, xp: 70, fat: 1.5, filter: "Jewelry" },
+            { name: "Ruby ring", lvl: 30, xp: 70, fat: 1.5, filter: "Jewelry" },
+            { name: "Ruby necklace", lvl: 40, xp: 75, fat: 1.6, filter: "Jewelry" },
+            { name: "Ruby amulet", lvl: 50, xp: 85, fat: 1.8, filter: "Jewelry" },
+            { name: "Diamond ring", lvl: 42, xp: 85, fat: 1.8, filter: "Jewelry" },
+            { name: "Diamond necklace", lvl: 56, xp: 90, fat: 1.9, filter: "Jewelry" },
+            { name: "Diamond amulet", lvl: 70, xp: 100, fat: 2.1, filter: "Jewelry" },
+            { name: "Dragonstone ring", lvl: 54, xp: 100, fat: 2.1, filter: "Jewelry" },
+            { name: "Dragonstone necklace", lvl: 72, xp: 105, fat: 2.2, filter: "Jewelry" },
+            { name: "Dragonstone amulet", lvl: 80, xp: 150, fat: 3.2, filter: "Jewelry" },
+            { name: "Ball of wool", lvl: 1, xp: 2.5, fat: 0.1, filter: "Spinning" },
+            { name: "Bow string", lvl: 10, xp: 15, fat: 0.4, filter: "Spinning" },
+            { name: "Molten glass", lvl: 1, xp: 20, fat: 0.5, filter: "Glass" },
+            { name: "Beer glass", lvl: 1, xp: 17.5, fat: 0.5, filter: "Glass" },
+            { name: "Vial", lvl: 33, xp: 35, fat: 0.9, filter: "Glass" },
+            { name: "Orb", lvl: 46, xp: 52.5, fat: 1.3, filter: "Glass" },
+            { name: "Battlestaff of water", lvl: 54, xp: 100, fat: 2.5, filter: "Battlestaves" },
+            { name: "Battlestaff of earth", lvl: 58, xp: 112.5, fat: 2.8, filter: "Battlestaves" },
+            { name: "Battlestaff of fire", lvl: 62, xp: 125, fat: 3.1, filter: "Battlestaves" },
+            { name: "Battlestaff of air", lvl: 66, xp: 137.5, fat: 3.4, filter: "Battlestaves" }
+        ],
+        "Firemaking": [
+            { name: "Logs", lvl: 1, xp: 40, fat: 1.161, dynamic: true }
+        ]
+    };
+
+    let activeSkill = null;
+    let activeFilter = "All";
+
+    function init() {
+        const grid = document.getElementById('skillGrid');
+        skills.forEach(s => {
+            const btn = document.createElement('div');
+            btn.className = 'skill-btn';
+            btn.innerText = s;
+            btn.onclick = () => loadSkill(s, btn);
+            grid.appendChild(btn);
+        });
+        // Add close button logic
+        const closeBtn = document.getElementById('closeCalcBtn');
+        closeBtn.onclick = () => {
+            document.getElementById('calcInterface').style.display = 'none';
+            document.getElementById('skillTitle').innerText = 'Select a Skill';
+            document.querySelectorAll('.skill-btn').forEach(b => b.classList.remove('active'));
+        };
+    }
+
+    function loadSkill(skill, btn) {
+        activeSkill = skill;
+        activeFilter = "All";
+        document.querySelectorAll('.skill-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        document.getElementById('skillTitle').innerText = skill;
+        document.getElementById('calcInterface').style.display = 'block';
+        
+        const filterBar = document.getElementById('filterBar');
+        filterBar.innerHTML = "";
+        
+        const list = methods[activeSkill] || [];
+        const uniqueFilters = [...new Set(list.map(item => item.filter).filter(Boolean))];
+        
+        if(uniqueFilters.length > 0) {
+            uniqueFilters.unshift("All");
+            uniqueFilters.forEach(f => {
+                const fBtn = document.createElement('div');
+                fBtn.className = 'filter-btn' + (f === "All" ? ' active' : '');
+                fBtn.innerText = f;
+                fBtn.onclick = () => {
+                    activeFilter = f;
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    fBtn.classList.add('active');
+                    calculate();
+                };
+                filterBar.appendChild(fBtn);
+            });
+        }
+
+        calculate();
+    }
+
+    function updateFromLevel() {
+        let lvl = parseInt(document.getElementById('currentLevel').value) || 1;
+        if (lvl > 99) lvl = 99;
+        if (lvl < 1) lvl = 1;
+        document.getElementById('currentLevel').value = lvl;
+        document.getElementById('currentXP').value = xpTable[lvl];
+        calculate();
+    }
+
+    function updateFromXP() {
+        const xp = parseInt(document.getElementById('currentXP').value) || 0;
+        let lvl = 1;
+        for(let i=1; i<=99; i++) {
+            if(xp >= xpTable[i]) lvl = i;
+        }
+        document.getElementById('currentLevel').value = lvl;
+        calculate();
+    }
+
+    function calculate() {
+        if (!activeSkill) return;
+
+        const currXP = parseInt(document.getElementById('currentXP').value) || 0;
+        const currLvl = parseInt(document.getElementById('currentLevel').value) || 1;
+        const targetLvl = parseInt(document.getElementById('targetLevel').value) || 99;
+        const targetXP = xpTable[targetLvl];
+        const needed = Math.max(0, targetXP - currXP);
+
+        document.getElementById('xpNeeded').innerText = needed.toLocaleString();
+
+        const tbody = document.getElementById('methodsBody');
+        tbody.innerHTML = "";
+
+        let list = methods[activeSkill] || [];
+        
+        if(activeFilter !== "All") {
+            list = list.filter(i => i.filter === activeFilter);
+        }
+
+        if(activeSkill === "Firemaking") {
+            // Only show 'Logs' and calculate total fires needed by simulating level-ups
+            list = list.filter(item => item.dynamic).map(item => ({
+                ...item,
+                name: 'Logs'
+            }));
+        }
+
+        let firstFatigueTotal = 0;
+        let totalFatiguePercent = 0;
+        if (activeSkill === "Firemaking" && list.length > 0) {
+            // Simulate log burning with increasing XP per log as level increases
+            const m = list[0];
+            let fires = 0;
+            let xp = currXP;
+            let lvl = currLvl;
+            let fatigue = 0;
+            while (xp < targetXP) {
+                // XP per log at current level
+                const xpPerLog = 25 + (lvl * 1.75);
+                xp += xpPerLog;
+                fires++;
+                fatigue += m.fat;
+                // Check if level up
+                while (lvl < 99 && xp >= xpTable[lvl + 1]) lvl++;
+            }
+            totalFatiguePercent = fatigue;
+            firstFatigueTotal = totalFatiguePercent;
+            const row = `
+                <tr>
+                    <td>${m.name}</td>
+                    <td style="color:${m.lvl > currLvl ? '#ff4444' : '#00ff00'}">${m.lvl}</td>
+                    <td>${(25 + (currLvl * 1.75)).toFixed(2)}</td>
+                    <td class="fatigue-val">${m.fat.toFixed(4)}%</td>
+                    <td style="color:#fff">${fires.toLocaleString()}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+            document.getElementById('xpNeeded').innerText = (targetXP - currXP).toLocaleString();
+            document.getElementById('totalFatigueDisp').innerText = firstFatigueTotal > 0 ? "~" + firstFatigueTotal.toFixed(2) + "%" : "0%";
+        } else {
+            list.forEach((m, index) => {
+                const count = Math.ceil(needed / m.xp);
+                totalFatiguePercent = count * m.fat;
+                if (index === 0) firstFatigueTotal = totalFatiguePercent;
+                const row = `
+                    <tr>
+                        <td>${m.name}</td>
+                        <td style="color:${m.lvl > currLvl ? '#ff4444' : '#00ff00'}">${m.lvl}</td>
+                        <td>${m.xp.toFixed(2)}</td>
+                        <td class="fatigue-val">${m.fat.toFixed(4)}%</td>
+                        <td style="color:#fff">${count.toLocaleString()}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+            document.getElementById('totalFatigueDisp').innerText = firstFatigueTotal > 0 ? "~" + firstFatigueTotal.toFixed(2) + "%" : "0%";
+        }
+    }
+
+    init();
+</script>
+
+</body>
+</html>

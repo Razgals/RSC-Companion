@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>RSC LostKit</title>
+  <link rel="stylesheet" href="main.css"/>
+  <style>
+    @font-face {
+      font-family: "RSQuill";
+      src: url("assets/RuneScape-Quill-8.otf") format("opentype");
+      font-weight: normal; font-style: normal;
+    }
+    body { font-family: RSQuill, system-ui, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <aside class="sidebar">
+      <div class="screenshot-controls-sidebar">
+        <button id="btn-capture-sidebar" class="screenshot-icon-btn" title="Capture Screenshot">
+          <img src="assets/capture.png" alt="Capture">
+        </button>
+        <button id="btn-folder-sidebar" class="screenshot-icon-btn" title="Open Screenshots Folder">
+          <img src="assets/folder.png" alt="Folder">
+        </button>
+      </div>
+      <div class="section">
+        <div class="section-title">Tools</div>
+        <div id="tool-list" class="list"></div>
+      </div>
+      <div class="section">
+        <div class="section-title">Calculators</div>
+        <div id="calc-list" class="list"></div>
+      </div>
+      <div class="section">
+        <div id="skill-list" class="list"></div>
+      </div>
+      <div class="section">
+        <div id="quest-list" class="list"></div>
+      </div>
+      
+      <div class="spacer"></div>
+    </aside>
+    <main class="content">
+      <div id="tabs" class="tabs"></div>
+      <div id="views" class="views"></div>
+    </main>
+  </div>
+  <script src="main.js"></script>
+  <script src="check-version.js"></script>
+</body>
+</html>

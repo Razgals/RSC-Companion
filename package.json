@@ -1,0 +1,44 @@
+{
+  "name": "rsc-companion",
+  "version": "1.0.0",
+  "description": "RSC Companion by Akg v1.0.",
+  "author": "Akg",
+  "private": true,
+  "main": "dist/main/main.js",
+  "type": "commonjs",
+"scripts": {
+  "dev": "concurrently -k \"tsc -w\" \"nodemon --watch dist/main --exec electron .\"",
+  "build": "node -e \"try{require('fs').rmSync('dist',{recursive:true,force:true})}catch{}\" && tsc && node scripts/copy-static.js",
+  "start": "electron .",
+  "pack": "npm run build && electron-builder --win",
+  "pack:portable": "npm run build && electron-builder --win portable",
+  "pack:nsis": "npm run build && electron-builder --win nsis"
+}
+,
+  "devDependencies": {
+    "electron": "30.5.1",
+    "electron-builder": "26.0.12",
+    "typescript": "^5.4.5",
+    "ts-node": "^10.9.2",
+    "@types/node": "^20.11.17",
+    "rimraf": "^5.0.5",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.2"
+  },
+  "build": {
+    "appId": "com.akg.rsc-companion",
+    "productName": "RSC Companion by Akg v1.0",
+    "files": ["dist/**"],
+    "directories": { "output": "release", "buildResources": "app/renderer/assets" },
+    "win": {
+      "icon": "app/renderer/assets/icon.ico",
+      "target": [
+        { "target": "portable", "arch": ["x64"] },
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": { "oneClick": true, "perMachine": false, "shortcutName": "RSC Companion by Akg v1.0" },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "electronVersion": "30.5.1"
+  }
+}
