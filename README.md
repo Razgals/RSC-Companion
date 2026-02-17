@@ -55,7 +55,7 @@ All other dependencies are installed automatically with:
 
 - See https://www.electron.build/multi-platform-build for more details.
 
-> **Note:** Building on macOS and Linux has not been tested by the author. Contributions and feedback for these platforms are welcome.
+> **Note:** Building on macOS and Linux has not been tested.
 
 ## Screenshots
 
@@ -76,6 +76,7 @@ MIT
 
 ---
 Built by Akg.
+
 
 
 
