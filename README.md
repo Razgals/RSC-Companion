@@ -61,14 +61,14 @@ All other dependencies are installed automatically with:
 
 
 
-![Main Window]
+##Main Window
 <img width="982" height="787" alt="Screenshot 2026-02-17 204413" src="https://github.com/user-attachments/assets/a47ec94d-df3a-4071-b505-1c4654740c84" />
 
-![Skill Guide]
+##Skill Guide
 <img width="990" height="789" alt="image" src="https://github.com/user-attachments/assets/48cc1d1b-4deb-4160-a98f-ea512361e5ad" />
 
 
-![Calculator]
+##Calculator
 <img width="989" height="789" alt="Screenshot 2026-02-17 204428" src="https://github.com/user-attachments/assets/fcdf09e7-c13a-4797-9951-d454b7169e5f" />
 
 ## License
@@ -76,4 +76,5 @@ MIT
 
 ---
 Built by Akg.
+
 
